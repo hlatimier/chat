@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<title>Mini Chat</title>
+
+<style>
+    body { font-family: Arial; margin: 20px; display: flex; gap: 20px; }
+    #users { width: 220px; border-right: 1px solid #aaa; padding-right: 10px; }
+    .user { padding: 5px; cursor: pointer; border-radius: 6px; }
+    .user.active { background: #ddd; font-weight: bold; }
+    #chat { flex: 1; display: flex; flex-direction: column; }
+    #messages { flex: 1; border: 1px solid #aaa; padding: 10px; overflow-y: auto; }
+    .msg { margin-bottom: 8px; }
+    .msg span.name { font-weight: bold; }
+    .add-user input { width: 100%; margin-bottom: 5px; }
+    .small-btn { width: 100%; padding: 6px; margin-top: 5px; cursor:pointer; }
+</style>
+
+<!-- EmailJS -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>
+emailjs.init("pq4SLZrdHPh6JHDh9");   /* Ta clé publique */
+</script>
+
+</head>
+<body>
+
+<!-- Liste des utilisateurs -->
+<div id="users">
+    <h3>Membres</h3>
+    <div id="userList"></div>
+
+    <h4>Ajouter un membre</h4>
+    <div class="add-user">
+        <input type="text" id="newFirst" placeholder="Prénom" />
+        <input type="text" id="newLast" placeholder="Nom" />
+        <input type="email" id="newMail" placeholder="Adresse mail" />
+        <button id="addUserBtn" class="small-btn">Ajouter membre</button>
+    </div>
+</div>
+
+<!-- Chat -->
+<div id="chat">
+    <div id="messages"></div>
+
+    <div style="display:flex; gap:5px; margin-top:10px;">
+        <input id="msgInput" placeholder="Votre message..." style="flex:1;">
+        <button id="sendBtn">Envoyer</button>
+    </div>
+</div>
+
+<script>
+// =======================
+// Données locales
+// =======================
+let USERS = JSON.parse(localStorage.getItem("chat_users") || "[]");
+let messages = JSON.parse(localStorage.getItem("chat_messages") || "[]");
+let activeUser = null;
+
+function saveUsers(){ localStorage.setItem("chat_users", JSON.stringify(USERS)); }
+function saveMessages(){ localStorage.setItem("chat_messages", JSON.stringify(messages)); }
+
+// =======================
+// Rendu utilisateurs
+// =======================
+function renderUsers(){
+    const box = document.getElementById("userList");
+    box.innerHTML = "";
+
+    USERS.forEach(u=>{
+        const div = document.createElement("div");
+        div.className = "user" + (u.id === activeUser ? " active" : "");
+        div.textContent = u.first + " " + u.last;
+
+        div.onclick = ()=>{ activeUser = u.id; renderUsers(); renderMessages(); };
+
+        div.oncontextmenu = (e)=>{
+            e.preventDefault();
+            if(confirm("Supprimer ce membre ?")){
+                USERS = USERS.filter(x=>x.id !== u.id);
+                saveUsers();
+                if(activeUser === u.id) activeUser = null;
+                renderUsers();
+                renderMessages();
+            }
+        };
+
+        box.appendChild(div);
+    });
+}
+
+// =======================
+// Rendu messages
+// =======================
+function renderMessages(){
+    const box = document.getElementById("messages");
+    box.innerHTML = "";
+
+    messages.forEach(m=>{
+        const div = document.createElement("div");
+        div.className = "msg";
+
+        const u = USERS.find(x => x.id === m.user);
+        let name = u ? (u.first + " " + u.last) : "System";
+
+        div.innerHTML = `<span class="name">${name}:</span> ${m.text}`;
+        box.appendChild(div);
+    });
+
+    box.scrollTop = box.scrollHeight;
+}
+
+// =======================
+// Envoi message utilisateur
+// =======================
+document.getElementById("sendBtn").onclick = ()=>{
+    if(!activeUser) return alert("Sélectionne un membre.");
+    const txt = msgInput.value.trim();
+    if(!txt) return;
+
+    messages.push({user:activeUser, text:txt, time:Date.now()});
+    saveMessages();
+    msgInput.value = "";
+    renderMessages();
+};
+
+// =======================
+// Ajout membre + EmailJS
+// =======================
+document.getElementById("addUserBtn").onclick = addUser;
+
+function addUser(){
+    const first = newFirst.value.trim();
+    const last  = newLast.value.trim();
+    const mail  = newMail.value.trim();
+
+    if(!first || !last || !mail) return alert("Veuillez remplir tous les champs.");
+
+    const id = (first + last + Date.now()).toLowerCase().replace(/\s+/g, "");
+
+    USERS.push({ id, first, last, mail });
+    saveUsers();
+
+    newFirst.value = "";
+    newLast.value = "";
+    newMail.value = "";
+
+    activeUser = id;
+
+    // Message système affiché dans le chat
+    messages.push({
+        user: "system",
+        text: "Un email a été envoyé à " + mail + " : Votre compte a été enregistré.",
+        time: Date.now()
+    });
+    saveMessages();
+
+    // =======================
+    // ENVOI EMAIL RÉEL
+    // =======================
+    emailjs.send(
+        "service_ypm7vct",        // service ID
+        "template_7zr82rk",       // template ID
+        {
+            to_email: mail,
+            to_name: first + " " + last,
+            message: "Votre compte a été enregistré. Bienvenue dans le chat !"
+        }
+    ).then(()=>{
+        console.log("Email envoyé !");
+    }).catch(err=>{
+        console.error("Erreur EmailJS :", err);
+    });
+
+    renderUsers();
+    renderMessages();
+}
+
+// Initial render
+renderUsers();
+renderMessages();
+</script>
+
+</body>
+</html>
