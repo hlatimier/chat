@@ -1,0 +1,13 @@
+<?php
+
+$message = htmlspecialchars($_POST['message']);
+
+if($message != ""){
+$file = fopen("messages.txt","a");
+fwrite($file,$message."\n");
+fclose($file);
+}
+
+header("Location: index.php");
+
+?>
