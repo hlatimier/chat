@@ -1,60 +1,184 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
+
 <head>
 <meta charset="UTF-8">
-<title>Tchat simple</title>
+<title>Tchat Simple</title>
 
 <style>
+
 body{
-font-family: Arial;
-background:#f0f0f0;
-text-align:center;
+background:#1e1f22;
+font-family:Arial;
+display:flex;
+justify-content:center;
+margin-top:30px;
+color:white;
+}
+
+#container{
+width:500px;
 }
 
 #chat{
-width:400px;
-height:300px;
-border:1px solid #ccc;
-background:white;
-overflow:auto;
-margin:auto;
+height:400px;
+overflow-y:auto;
+background:#2b2d31;
 padding:10px;
+border-radius:10px;
+margin-bottom:10px;
+}
+
+.message{
+background:#40444b;
+padding:8px;
+margin-bottom:8px;
+border-radius:8px;
+}
+
+.time{
+font-size:11px;
+color:#aaa;
+margin-top:5px;
 }
 
 input{
-width:300px;
-padding:5px;
+padding:10px;
+border:none;
+border-radius:5px;
+}
+
+#pseudo{
+width:120px;
+}
+
+#message{
+width:250px;
 }
 
 button{
-padding:5px 10px;
+padding:10px;
+background:#5865f2;
+border:none;
+border-radius:5px;
+color:white;
+cursor:pointer;
 }
+
 </style>
-
-<script>
-function chargerMessages(){
-fetch("messages.txt")
-.then(response => response.text())
-.then(data => {
-document.getElementById("chat").innerHTML = data.replace(/\n/g,"<br>");
-});
-}
-
-setInterval(chargerMessages,1000);
-</script>
-
 </head>
 
-<body onload="chargerMessages()">
+<body>
 
-<h2>Tchat ultra simple</h2>
+<div id="container">
+
+<h2>Mini Tchat</h2>
 
 <div id="chat"></div>
 
-<form action="send.html" method="post">
-<input type="text" name="message" placeholder="Votre message">
-<button type="submit">Envoyer</button>
-</form>
+<input type="text" id="pseudo" placeholder="Pseudo">
+<input type="text" id="message" placeholder="Message">
+
+<button onclick="envoyer()">Envoyer</button>
+
+</div>
+
+<script type="module">
+
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+import {
+getFirestore,
+collection,
+addDoc,
+query,
+orderBy,
+onSnapshot
+}
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+
+apiKey: "TON_API_KEY",
+
+authDomain: "TON_PROJET.firebaseapp.com",
+
+projectId: "TON_PROJET",
+
+storageBucket: "TON_PROJET.appspot.com",
+
+messagingSenderId: "123456789",
+
+appId: "TON_APP_ID"
+
+};
+
+const app = initializeApp(firebaseConfig);
+
+const db = getFirestore(app);
+
+const chat = document.getElementById("chat");
+
+window.envoyer = async function(){
+
+const pseudo =
+document.getElementById("pseudo").value;
+
+const message =
+document.getElementById("message").value;
+
+if(pseudo === "" || message === ""){
+return;
+}
+
+await addDoc(collection(db,"messages"),{
+
+pseudo:pseudo,
+message:message,
+date:Date.now()
+
+});
+
+document.getElementById("message").value = "";
+
+}
+
+const q = query(
+collection(db,"messages"),
+orderBy("date")
+);
+
+onSnapshot(q,(snapshot)=>{
+
+chat.innerHTML = "";
+
+snapshot.forEach((doc)=>{
+
+const data = doc.data();
+
+const div = document.createElement("div");
+
+div.className = "message";
+
+const heure =
+new Date(data.date).toLocaleTimeString();
+
+div.innerHTML = `
+<b>${data.pseudo}</b><br>
+${data.message}
+<div class="time">${heure}</div>
+`;
+
+chat.appendChild(div);
+
+});
+
+chat.scrollTop = chat.scrollHeight;
+
+});
+
+</script>
 
 </body>
 </html>
