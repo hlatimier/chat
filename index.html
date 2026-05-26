@@ -3,44 +3,144 @@
 
 <head>
 <meta charset="UTF-8">
-<title>Tchat avec Images</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Discord Clone</title>
 
 <style>
 
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+}
+
 body{
-background:#1e1f22;
 font-family:Arial;
+background:#313338;
+color:white;
+height:100vh;
 display:flex;
+}
+
+/* BARRE SERVEURS */
+
+#servers{
+width:72px;
+background:#1e1f22;
+display:flex;
+flex-direction:column;
+align-items:center;
+padding-top:10px;
+gap:10px;
+}
+
+.server{
+width:50px;
+height:50px;
+border-radius:50%;
+background:#5865f2;
+display:flex;
+align-items:center;
 justify-content:center;
-margin-top:30px;
+font-weight:bold;
+cursor:pointer;
+transition:0.2s;
+}
+
+.server:hover{
+border-radius:18px;
+background:#4752c4;
+}
+
+/* COLONNE CANAUX */
+
+#channels{
+width:240px;
+background:#2b2d31;
+padding:15px;
+display:flex;
+flex-direction:column;
+}
+
+#channels h2{
+font-size:18px;
+margin-bottom:20px;
+}
+
+.channel{
+padding:10px;
+border-radius:5px;
+cursor:pointer;
+margin-bottom:5px;
+color:#b5bac1;
+}
+
+.channel:hover{
+background:#35373c;
 color:white;
 }
 
-#container{
-width:500px;
+/* CHAT */
+
+#main{
+flex:1;
+display:flex;
+flex-direction:column;
+}
+
+#topbar{
+height:50px;
+background:#232428;
+display:flex;
+align-items:center;
+padding-left:20px;
+font-weight:bold;
+border-bottom:1px solid #1a1b1e;
 }
 
 #chat{
-height:500px;
+flex:1;
 overflow-y:auto;
-background:#2b2d31;
-padding:10px;
-border-radius:10px;
-margin-bottom:10px;
+padding:20px;
 }
 
 .message{
-background:#40444b;
-padding:8px;
-margin-bottom:8px;
-border-radius:8px;
+display:flex;
+margin-bottom:20px;
+}
+
+.avatar{
+width:40px;
+height:40px;
+border-radius:50%;
+background:#5865f2;
+display:flex;
+align-items:center;
+justify-content:center;
+font-weight:bold;
+margin-right:10px;
+flex-shrink:0;
+}
+
+.content{
+background:#2b2d31;
+padding:10px;
+border-radius:10px;
+width:fit-content;
+max-width:500px;
 position:relative;
+}
+
+.username{
+font-weight:bold;
+margin-bottom:5px;
 }
 
 .time{
 font-size:11px;
 color:#aaa;
-margin-top:5px;
+margin-left:10px;
 }
 
 .delete{
@@ -49,20 +149,22 @@ right:10px;
 top:10px;
 cursor:pointer;
 color:red;
-font-size:18px;
 }
 
-.message img{
-max-width:100%;
+.content img{
+max-width:300px;
 margin-top:10px;
 border-radius:8px;
 }
 
-input{
-padding:10px;
-border:none;
-border-radius:5px;
-margin-bottom:5px;
+/* BARRE MESSAGE */
+
+#inputArea{
+background:#383a40;
+padding:20px;
+display:flex;
+gap:10px;
+align-items:center;
 }
 
 #pseudo{
@@ -70,16 +172,28 @@ width:120px;
 }
 
 #message{
-width:250px;
+flex:1;
+}
+
+input{
+padding:12px;
+border:none;
+border-radius:8px;
+background:#1e1f22;
+color:white;
 }
 
 button{
-padding:10px;
-background:#5865f2;
+padding:12px 18px;
 border:none;
-border-radius:5px;
+border-radius:8px;
+background:#5865f2;
 color:white;
 cursor:pointer;
+}
+
+button:hover{
+background:#4752c4;
 }
 
 </style>
@@ -87,27 +201,66 @@ cursor:pointer;
 
 <body>
 
-<div id="container">
+<!-- SERVEURS -->
 
-<h2>Mini Tchat</h2>
+<div id="servers">
+
+<div class="server">D</div>
+<div class="server">+</div>
+
+</div>
+
+<!-- CANAUX -->
+
+<div id="channels">
+
+<h2>Mon Serveur</h2>
+
+<div class="channel">
+# général
+</div>
+
+<div class="channel">
+# gaming
+</div>
+
+<div class="channel">
+# images
+</div>
+
+</div>
+
+<!-- PRINCIPAL -->
+
+<div id="main">
+
+<div id="topbar">
+# général
+</div>
 
 <div id="chat"></div>
 
-<input type="text"
+<div id="inputArea">
+
+<input
+type="text"
 id="pseudo"
 placeholder="Pseudo">
 
-<input type="text"
+<input
+type="text"
 id="message"
-placeholder="Message">
+placeholder="Envoyer un message">
 
-<br><br>
-
-<input type="file" id="image">
+<input
+type="file"
+id="image">
 
 <button onclick="envoyer()">
 Envoyer
 </button>
+
+</div>
 
 </div>
 
@@ -170,6 +323,8 @@ document.getElementById("chat");
 const pseudoInput =
 document.getElementById("pseudo");
 
+/* SAUVEGARDE PSEUDO */
+
 const pseudoSauvegarde =
 localStorage.getItem("pseudo");
 
@@ -188,6 +343,8 @@ pseudoInput.value
 );
 
 });
+
+/* ENVOYER MESSAGE */
 
 window.envoyer = async function(){
 
@@ -244,13 +401,18 @@ document.getElementById("image").value = "";
 
 }
 
-window.supprimer = async function(id){
+/* SUPPRIMER MESSAGE */
+
+window.supprimer =
+async function(id){
 
 await deleteDoc(
 doc(db,"messages",id)
 );
 
 }
+
+/* AFFICHAGE TEMPS REEL */
 
 const q = query(
 collection(db,"messages"),
@@ -286,19 +448,33 @@ imageHTML =
 
 div.innerHTML = `
 
+<div class="avatar">
+${data.pseudo[0].toUpperCase()}
+</div>
+
+<div class="content">
+
 <div class="delete"
 onclick="supprimer('${messageDoc.id}')">
 🗑️
 </div>
 
-<b>${data.pseudo}</b><br>
+<div class="username">
 
+${data.pseudo}
+
+<span class="time">
+${heure}
+</span>
+
+</div>
+
+<div>
 ${data.message}
+</div>
 
 ${imageHTML}
 
-<div class="time">
-${heure}
 </div>
 
 `;
